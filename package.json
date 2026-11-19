@@ -1,0 +1,29 @@
+{
+  "name": "backend-ncapas-mvc",
+  "version": "1.0.0",
+  "description": "Backend API RESTful con arquitectura N-Capas, MVC y patrones de diseño (Singleton, Repository, Factory)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test_integration.js"
+  },
+  "keywords": [
+    "express",
+    "n-capas",
+    "mvc",
+    "postgresql",
+    "api-rest"
+  ],
+  "author": "pez",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "prisma": "^6.19.3"
+  }
+}

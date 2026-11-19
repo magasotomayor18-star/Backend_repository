@@ -1,0 +1,24 @@
+// =============================================================================
+// ESQUEMA DE PRISMA ORM (Capa 1: Datos -> Capa 2: Backend)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Mapeo exacto de la tabla existente 'producto' en PostgreSQL
+model Producto {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @db.VarChar(200)
+  descripcion String   @db.Text
+  urlimagen   String   @db.VarChar(500)
+  pvp         Decimal  @db.Decimal(10, 2)
+  stock       Int
+
+  @@map("producto")
+}
