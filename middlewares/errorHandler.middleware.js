@@ -6,6 +6,7 @@
 export const errorHandlerMiddleware = (err, req, res, next) => {
   const statusCode = err.status || err.statusCode || 500;
   const isDev = process.env.NODE_ENV === 'development';
+  const hideInternalDetails = statusCode >= 500 && !isDev;
 
   console.error(`[Error Handler] ${req.method} ${req.originalUrl}:`, err);
 
@@ -25,8 +26,10 @@ export const errorHandlerMiddleware = (err, req, res, next) => {
   return res.status(statusCode).json({
     success: false,
     error: {
-      code: err.code || 'INTERNAL_SERVER_ERROR',
-      message: err.message || 'Ha ocurrido un error inesperado en el servidor.',
+      code: hideInternalDetails ? 'INTERNAL_SERVER_ERROR' : err.code || 'INTERNAL_SERVER_ERROR',
+      message: hideInternalDetails
+        ? 'Ha ocurrido un error inesperado en el servidor.'
+        : err.message || 'Ha ocurrido un error inesperado en el servidor.',
       details: isDev ? err.stack : undefined,
     },
   });
