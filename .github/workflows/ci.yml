@@ -56,6 +56,11 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/backend_ci?schema=public
 
+      - name: Seed test database
+        run: node prisma/seed.js
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/backend_ci?schema=public
+
       - name: Run API tests
         env:
           ALLOWED_ORIGINS: https://frontend.example.test

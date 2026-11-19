@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
+    "start:render": "npx prisma db push --schema prisma/schema.prisma && node prisma/seed.js && node server.js",
     "dev": "node --watch server.js",
     "test": "node test_integration.js",
     "test:api": "node --test tests/api.integration.test.js tests/errorHandler.test.js"
