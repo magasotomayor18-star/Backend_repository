@@ -1,0 +1,109 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-tests:
+    name: API integration and version checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: backend_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d backend_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify installed library versions
+        run: npm ls --depth=0
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema prisma/schema.prisma
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/backend_ci?schema=public
+
+      - name: Prepare test database
+        run: npx prisma db push --schema prisma/schema.prisma --skip-generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/backend_ci?schema=public
+
+      - name: Run API tests
+        env:
+          ALLOWED_ORIGINS: https://frontend.example.test
+          API_BASE_URL: http://127.0.0.1:5050/api/v1
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/backend_ci?schema=public
+          NODE_ENV: test
+          PORT: 5050
+        run: |
+          node server.js > server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail "$API_BASE_URL/health" > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          if ! curl --silent --fail "$API_BASE_URL/health" > /dev/null; then
+            cat server.log
+            exit 1
+          fi
+
+          npm run test:api
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        id: audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Report dependency audit findings
+        if: steps.audit.outcome == 'failure'
+        run: echo "::warning title=Dependency audit::High or critical vulnerabilities were found; review the audit output before deployment."
