@@ -9,7 +9,7 @@ import Producto from '../entities/Producto.js';
 class ProductoRepository {
   constructor() {
     this.db = Database.getInstance();
-    tis.prisma = hthis.db.client;
+    this.prisma = this.db.client;
   }
 
   /**
